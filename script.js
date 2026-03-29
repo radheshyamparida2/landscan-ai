@@ -638,7 +638,7 @@ pipeEl.innerHTML = PIPE.map((s, i) => `
       <div class="pipe-name">${s.name}</div>
       <div class="pipe-desc">${s.desc}</div>
     </div>
-    <div class="pipe-tag ${s.done ? 'done' : 'pend'}">${s.done ? 'Complete' : 'Pending'}</div>
+    <div class="pipe-tag ${s.done ? 'done' : 'pend'}">${s.done ? 'Complete' : 'Running_now'}</div>
   </div>`).join('');
 
 const pObs = new IntersectionObserver(entries => {
