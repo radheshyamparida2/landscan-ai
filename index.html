@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LandScan AI — Landslide Detection System</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+  <!-- External stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Background topographic canvas ── -->
+<canvas id="topo-canvas"></canvas>
+
+<!-- ── Navigation ── -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-dot"></div>
+    LandScan AI
+  </div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#performance">Performance</a>
+    <a href="#xai">XAI</a>
+    <a href="#morphology">Morphology</a>
+    <a href="#boundary">Boundary</a>
+    <a href="#sdem">SDEM</a>
+    <a href="#pipeline">Pipeline</a>
+  </div>
+  <div class="nav-badge">RESEARCH BUILD</div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="hero" id="home">
+  <div class="hero-grid"></div>
+  <div class="hero-scan"></div>
+
+  <div class="hero-eye">[ SATELLITE INTELLIGENCE SYSTEM ]</div>
+
+  <h1 class="hero-title">
+    LAND<span>SCAN</span>
+    <em>AI</em>
+  </h1>
+
+  <p class="hero-sub">
+    Deep-learning landslide detection from Sentinel-2 multispectral imagery.
+    Five encoder–decoder architectures evaluated across pixel metrics, morphology,
+    boundary accuracy, and spatial error analysis.
+  </p>
+
+  <div class="hero-stats">
+    <div>
+      <div class="hstat-val">5</div>
+      <div class="hstat-lbl">Architectures</div>
+    </div>
+    <div>
+      <div class="hstat-val">17</div>
+      <div class="hstat-lbl">Input Channels</div>
+    </div>
+    <div>
+      <div class="hstat-val">84.2%</div>
+      <div class="hstat-lbl">Best F1</div>
+    </div>
+    <div>
+      <div class="hstat-val">80ep</div>
+      <div class="hstat-lbl">Fine-tuning</div>
+    </div>
+  </div>
+
+  <div class="hero-cta">
+    <button class="btn-p" onclick="document.getElementById('overview').scrollIntoView({behavior:'smooth'})">
+      Explore Results
+    </button>
+    <button class="btn-g" onclick="document.getElementById('pipeline').scrollIntoView({behavior:'smooth'})">
+      View Pipeline
+    </button>
+  </div>
+
+  <div class="scroll-hint">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     OVERVIEW — Best Model Summary
+══════════════════════════════════════════ -->
+<section id="overview">
+  <div class="sw">
+    <div class="slbl">System Overview</div>
+    <h2 class="stitle">Best-in-Class <span>Results</span></h2>
+    <p class="sdesc">
+      Attention ResUNet leads across all five evaluation frameworks, achieving
+      the highest F1 and IoU while maintaining superior boundary fidelity.
+    </p>
+
+    <!-- top-level metric cards -->
+    <div class="mg">
+      <div class="mc"><div class="mc-lbl">Best Model</div><div class="mc-val a" style="font-size:1.2rem;letter-spacing:.04em">Attn-ResUNet</div><div class="mc-sub">Stage-2 fine-tuned</div></div>
+      <div class="mc"><div class="mc-lbl">Precision</div><div class="mc-val g">87.3%</div><div class="mc-sub">↑ vs baseline</div></div>
+      <div class="mc"><div class="mc-lbl">Recall</div><div class="mc-val a">81.4%</div><div class="mc-sub">Landslide pixels</div></div>
+      <div class="mc"><div class="mc-lbl">F1 Score</div><div class="mc-val g">84.2%</div><div class="mc-sub">Harmonic mean</div></div>
+      <div class="mc"><div class="mc-lbl">IoU</div><div class="mc-val o">72.7%</div><div class="mc-sub">Intersection / Union</div></div>
+      <div class="mc"><div class="mc-lbl">MCC</div><div class="mc-val a">0.823</div><div class="mc-sub">Matthews Corr.</div></div>
+    </div>
+
+    <!-- radar + comparison table -->
+    <div class="cmp">
+      <div class="cc">
+        <div class="cc-t">Model <span>Radar Comparison</span></div>
+        <canvas id="radarChart" height="280"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-t">All Models — <span>Pixel Metrics</span></div>
+        <table class="mt" id="overviewTable"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     PERFORMANCE — Per-model deep dive
+══════════════════════════════════════════ -->
+<section id="performance">
+  <div class="sw">
+    <div class="slbl">Performance Analysis</div>
+    <h2 class="stitle">Model <span>Deep Dive</span></h2>
+    <p class="sdesc">
+      Select a model to inspect its full metric breakdown, per-sample scores,
+      and qualitative segmentation outputs.
+    </p>
+
+    <!-- model selector buttons -->
+    <div class="ms" id="modelBtns">
+      <button class="mb" onclick="selectModel('unet',this)">UNet</button>
+      <button class="mb" onclick="selectModel('attnunet',this)">Attn-UNet</button>
+      <button class="mb" onclick="selectModel('resunet',this)">ResUNet</button>
+      <button class="mb active" onclick="selectModel('attnresunet',this)">Attn-ResUNet</button>
+      <button class="mb" onclick="selectModel('mmarunet',this)">MMAR-UNet</button>
+    </div>
+
+    <!-- model detail panel -->
+    <div class="md-panel" id="modelPanel"></div>
+
+    <!-- per-sample bar charts -->
+    <div class="cg2">
+      <div class="cc">
+        <div class="cc-t">Per-Sample <span>F1 Score</span></div>
+        <canvas id="f1Chart" height="200"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-t">Per-Sample <span>IoU</span></div>
+        <canvas id="iouChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- all-model F1 grouped bar -->
+    <div class="cc" style="margin-bottom:2.5rem">
+      <div class="cc-t">All Models — <span>F1 per Sample</span></div>
+      <canvas id="allF1Chart" height="180"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     XAI — Explainability
+══════════════════════════════════════════ -->
+<section id="xai">
+  <div class="sw">
+    <div class="slbl">Explainability</div>
+    <h2 class="stitle">XAI <span>Analysis</span></h2>
+    <p class="sdesc">
+      Integrated Gradients and Grad-CAM visualisations reveal which input
+      channels drive each model's segmentation decisions.
+    </p>
+
+    <!-- model / sample selectors -->
+    <div style="display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap">
+      <select class="sf" id="xaiModel" onchange="renderXAI()">
+        <option value="attnresunet">Attn-ResUNet</option>
+        <option value="unet">UNet</option>
+        <option value="attnunet">Attn-UNet</option>
+        <option value="resunet">ResUNet</option>
+        <option value="mmarunet">MMAR-UNet</option>
+      </select>
+      <select class="sf" id="xaiType" onchange="renderXAI()">
+        <option value="ig">Integrated Gradients</option>
+        <option value="gradcam">Grad-CAM</option>
+        <option value="both">Both</option>
+      </select>
+    </div>
+
+    <div class="xai-panels" id="xaiPanels"></div>
+
+    <!-- channel importance bar chart -->
+    <div class="cc">
+      <div class="cc-t">Channel <span>Attribution Importance</span></div>
+      <canvas id="chanChart" height="200"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     MORPHOLOGY — LMCS Evaluation
+══════════════════════════════════════════ -->
+<section id="morphology">
+  <div class="sw">
+    <div class="slbl">Morphology · LMCS</div>
+    <h2 class="stitle">Landslide <span>Shape Metrics</span></h2>
+    <p class="sdesc">
+      Novel Landslide Morphology Comparison Score evaluates area, elongation,
+      and compactness of extracted polygons against ground-truth geometry.
+    </p>
+
+    <!-- scatter panels -->
+    <div style="display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap">
+      <select class="sf" id="lmcsModel" onchange="renderLMCS()">
+        <option value="all">All Models</option>
+        <option value="unet">UNet</option>
+        <option value="attnunet">Attn-UNet</option>
+        <option value="resunet">ResUNet</option>
+        <option value="attnresunet">Attn-ResUNet</option>
+        <option value="mmarunet">MMAR-UNet</option>
+      </select>
+    </div>
+    <div class="sp-grid" id="lmcsPanels"></div>
+
+    <!-- summary table -->
+    <div class="cc" style="margin-bottom:1.75rem">
+      <div class="cc-t">LMCS — <span>Summary Table</span></div>
+      <table class="mt" id="lmcsTable"></table>
+    </div>
+
+    <!-- sub-metric bar chart -->
+    <div class="cc">
+      <div class="cc-t">Area · Elongation · Compactness <span>per Polygon</span></div>
+      <canvas id="lmcsSub" height="200"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     BOUNDARY — Hausdorff / Chamfer / BF1
+══════════════════════════════════════════ -->
+<section id="boundary">
+  <div class="sw">
+    <div class="slbl">Boundary Evaluation</div>
+    <h2 class="stitle">Spatial <span>Boundary Accuracy</span></h2>
+    <p class="sdesc">
+      Hausdorff Distance, Chamfer Distance, and Boundary F1 quantify the
+      spatial precision of predicted landslide perimeters.
+    </p>
+
+    <div class="bg-grid" id="boundaryGrid"></div>
+
+    <div class="cg2">
+      <div class="cc">
+        <div class="cc-t">Hausdorff <span>Distance (m)</span></div>
+        <canvas id="hdChart" height="220"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-t">Boundary <span>F1 Score (%)</span></div>
+        <canvas id="bf1Chart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SDEM — Signed Distance Error Maps
+══════════════════════════════════════════ -->
+<section id="sdem">
+  <div class="sw">
+    <div class="slbl">Signed Distance Error</div>
+    <h2 class="stitle">SDEM <span>Spatial Analysis</span></h2>
+    <p class="sdesc">
+      Signed distance error maps localise over- and under-prediction zones
+      relative to ground-truth boundaries, computed at pixel resolution.
+    </p>
+
+    <div style="display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap">
+      <select class="sf" id="sdemModel" onchange="renderSdem()">
+        <option value="all">All Models</option>
+        <option value="unet">UNet</option>
+        <option value="attnunet">Attn-UNet</option>
+        <option value="resunet">ResUNet</option>
+        <option value="attnresunet">Attn-ResUNet</option>
+        <option value="mmarunet">MMAR-UNet</option>
+      </select>
+      <select class="sf" id="sdemType" onchange="renderSdem()">
+        <option value="panel">Panel View</option>
+        <option value="mean">Mean SDEM</option>
+      </select>
+    </div>
+
+    <div class="sp-grid" id="sdemPanels"></div>
+
+    <div class="cc" style="margin-bottom:1.75rem">
+      <div class="cc-t">SDEM — <span>Error Table</span></div>
+      <table class="mt" id="sdemTable"></table>
+    </div>
+
+    <div class="cg2">
+      <div class="cc">
+        <div class="cc-t">Mean <span>RMSE (m)</span></div>
+        <canvas id="sdemRmse" height="220"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-t">False-Positive <span>Pixel Count</span></div>
+        <canvas id="fpChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     PIPELINE
+══════════════════════════════════════════ -->
+<section id="pipeline">
+  <div class="sw">
+    <div class="slbl">Research Pipeline</div>
+    <h2 class="stitle">End-to-End <span>Workflow</span></h2>
+    <p class="sdesc">
+      Nine Python modules orchestrate data preparation, multi-stage training,
+      XAI attribution, object extraction, and evaluation.
+    </p>
+
+    <div class="md-panel">
+      <div class="pipeline" id="pipeEl"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer>
+  <div class="foot-l">
+    <strong>LandScan AI</strong> · Landslide Detection System · Research Build
+  </div>
+  <div class="foot-r">
+    Sentinel-2 · 17-channel · 5 Architectures · Attention ResUNet Best Model
+  </div>
+</footer>
+
+<!-- External JavaScript -->
+<script src="script.js"></script>
+
+</body>
+</html>
